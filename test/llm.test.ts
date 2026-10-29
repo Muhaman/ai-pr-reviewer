@@ -9,7 +9,7 @@ function stub(impl: (params: unknown) => Promise<unknown>) {
   return { client: { beta: { messages: { parse } } } as unknown as ParseClient, parse };
 }
 
-const ok = async (_params?: unknown) => ({ stop_reason: "end_turn", stop_details: null, parsed_output: parsed });
+const ok = async () => ({ stop_reason: "end_turn", stop_details: null, parsed_output: parsed });
 
 describe("supportsServerFallback", () => {
   it("is true for opus and sonnet 5.5 and false for haiku", () => {
