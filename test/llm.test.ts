@@ -4,12 +4,12 @@ import { createLlm, LlmError, supportsServerFallback, type ParseClient } from ".
 const request = { system: "s", user: "u" };
 const parsed = { findings: [{ line: 1, severity: "minor", title: "t", body: "b" }] };
 
-function stub(impl: () => Promise<unknown>) {
+function stub(impl: (params: unknown) => Promise<unknown>) {
   const parse = vi.fn(impl);
   return { client: { beta: { messages: { parse } } } as unknown as ParseClient, parse };
 }
 
-const ok = async () => ({ stop_reason: "end_turn", stop_details: null, parsed_output: parsed });
+const ok = async (_params?: unknown) => ({ stop_reason: "end_turn", stop_details: null, parsed_output: parsed });
 
 describe("supportsServerFallback", () => {
   it("is true for opus and sonnet 5.5 and false for haiku", () => {
@@ -23,7 +23,7 @@ describe("createLlm", () => {
   it("sends no betas or fallbacks for a model without server-side fallback", async () => {
     const { client, parse } = stub(ok);
     await createLlm("k", "claude-haiku-5-5", client).review(request);
-    const params = parse.mock.calls[0]?.[0] as unknown as Record<string, unknown>;
+    const params = parse.mock.calls[0]?.[0] as Record<string, unknown>;
     expect(params).not.toHaveProperty("betas");
     expect(params).not.toHaveProperty("fallbacks");
     expect(params.model).toBe("claude-haiku-5-5");
@@ -32,7 +32,7 @@ describe("createLlm", () => {
   it("opts into server-side fallback on opus", async () => {
     const { client, parse } = stub(ok);
     await createLlm("k", "claude-opus-5-5", client).review(request);
-    const params = parse.mock.calls[0]?.[0] as unknown as Record<string, unknown>;
+    const params = parse.mock.calls[0]?.[0] as Record<string, unknown>;
     expect(params.betas).toEqual(["server-side-fallback-2026-07-01"]);
     expect(params.fallbacks).toBe("default");
   });
