@@ -2,7 +2,10 @@ import { describe, expect, it } from "vitest";
 import { shouldReview } from "../src/filter.js";
 
 const opts = { exclude: [] as string[], maxPatchChars: 20_000 };
-const file = (filename: string, extra: Record<string, unknown> = {}) => ({
+const file = (
+  filename: string,
+  extra: { status?: string; patch?: string | undefined } = {},
+) => ({
   filename,
   status: "modified",
   patch: "@@ -1 +1 @@\n-a\n+b",
