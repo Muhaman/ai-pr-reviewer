@@ -1,0 +1,33 @@
+name: AI PR Reviewer
+description: Reviews pull requests with Claude and leaves inline comments.
+author: Muhamman Ahmad
+branding:
+  icon: eye
+  color: purple
+inputs:
+  anthropic_api_key:
+    description: Anthropic API key used to call Claude.
+    required: true
+  github_token:
+    description: Token used to read the PR diff and post the review.
+    required: false
+    default: ${{ github.token }}
+  model:
+    description: Claude model used for the review.
+    required: false
+    default: claude-opus-5-5
+  max_files:
+    description: Maximum number of changed files to review.
+    required: false
+    default: "20"
+  min_severity:
+    description: Lowest severity to comment on (info, minor, major, critical).
+    required: false
+    default: minor
+  exclude:
+    description: Newline-separated globs of files to skip.
+    required: false
+    default: ""
+runs:
+  using: node24
+  main: dist/index.js
