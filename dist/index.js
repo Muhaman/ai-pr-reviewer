@@ -74218,19 +74218,31 @@ var LlmError = class extends Error {
   }
 };
 var MAX_TOKENS = 16e3;
-function createLlm(apiKey, model) {
-  const client = new Anthropic({ apiKey });
+var FALLBACK_BETA = "server-side-fallback-2026-07-01";
+var FALLBACK_MODELS = /* @__PURE__ */ new Set(["claude-opus-5-5", "claude-sonnet-5-5"]);
+function supportsServerFallback(model) {
+  return FALLBACK_MODELS.has(model);
+}
+function createLlm(apiKey, model, client = new Anthropic({ apiKey })) {
+  const fallback = supportsServerFallback(model) ? { betas: [FALLBACK_BETA], fallbacks: "default" } : {};
   return {
     async review({ system, user }) {
-      const response = await client.beta.messages.parse({
-        model,
-        max_tokens: MAX_TOKENS,
-        betas: ["server-side-fallback-2026-07-01"],
-        fallbacks: "default",
-        system,
-        messages: [{ role: "user", content: user }],
-        output_config: { effort: "high", format: zodOutputFormat(ReviewOutputSchema) }
-      });
+      let response;
+      try {
+        response = await client.beta.messages.parse({
+          model,
+          max_tokens: MAX_TOKENS,
+          ...fallback,
+          system,
+          messages: [{ role: "user", content: user }],
+          output_config: { effort: "high", format: zodOutputFormat(ReviewOutputSchema) }
+        });
+      } catch (err) {
+        if (err instanceof SyntaxError || err instanceof external_exports.ZodError) {
+          throw new LlmError(`Claude returned invalid or truncated output: ${err.message}`);
+        }
+        throw err;
+      }
       if (response.stop_reason === "refusal") {
         const category = response.stop_details?.category ?? "unspecified";
         throw new LlmError(`Claude declined to review this file (category: ${category})`);
