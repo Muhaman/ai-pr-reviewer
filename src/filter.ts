@@ -21,14 +21,15 @@ const LOCKFILES = new Set([
   "go.sum",
 ]);
 
-const isGenerated = picomatch(["dist/**", "*.min.*"], { matchBase: true });
+const isBuildOutput = picomatch("dist/**");
+const isMinified = picomatch("*.min.*", { matchBase: true });
 
 export function shouldReview(file: ChangedFile, options: FilterOptions): boolean {
   if (file.status === "removed" || !file.patch) return false;
   if (file.patch.length > options.maxPatchChars) return false;
   const basename = file.filename.split("/").pop() ?? file.filename;
   if (LOCKFILES.has(basename)) return false;
-  if (isGenerated(file.filename)) return false;
+  if (isBuildOutput(file.filename) || isMinified(file.filename)) return false;
   if (options.exclude.length > 0 && picomatch.isMatch(file.filename, options.exclude, { dot: true })) {
     return false;
   }
