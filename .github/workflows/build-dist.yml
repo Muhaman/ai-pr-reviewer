@@ -8,6 +8,13 @@ on:
     paths:
       - "src/**"
       - "package.json"
+      - "tsconfig.json"
+      - ".github/workflows/build-dist.yml"
+  workflow_dispatch:
+
+concurrency:
+  group: build-dist
+  cancel-in-progress: false
 
 permissions:
   contents: write
@@ -31,5 +38,6 @@ jobs:
             echo "dist is up to date"
           else
             git commit -m "Build dist"
+            git pull --rebase origin "${GITHUB_REF_NAME}"
             git push
           fi
